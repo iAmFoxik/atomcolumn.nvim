@@ -5,10 +5,12 @@ M.config = {
   sign = nil,
   ft_ignore = nil,
   bt_ignore = nil,
+  current_line = nil,
   hl = {
     sign = nil,
     lnum = nil,
     sep = nil,
+    current = nil,
   },
 }
 

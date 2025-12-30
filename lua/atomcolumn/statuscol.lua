@@ -26,17 +26,55 @@ function M.get_lnum()
   return vim.v.lnum
 end
 
+function M.get_sign_hl(lnum)
+  local bufnr = vim.api.nvim_get_current_buf()
+  local extmarks = vim.api.nvim_buf_get_extmarks(
+    bufnr,
+    -1,
+    { lnum - 1, 0 },
+    { lnum - 1, 0 },
+    { details = true, type = "sign" }
+  )
+
+  local sign = nil
+  for _, extmark in ipairs(extmarks) do
+    local sign_hl = extmark[4].sign_hl_group or ""
+    local priority = extmark[4].priority
+
+    if sign_hl:match("^DiagnosticSign") then
+      if sign and sign.priority < priority then
+        sign = {
+          sign_hl = sign_hl,
+          priority = priority,
+        }
+      else
+        sign = {
+          sign_hl = sign_hl,
+          priority = priority,
+        }
+      end
+    end
+  end
+
+  return sign and sign.sign_hl or nil
+end
+
 function M.render()
   local width = M.get_width()
+
   if vim.v.virtnum < 0 then
     return string.rep(" ", width)
   end
 
-  local lnum = tostring(M.get_lnum())
+  local lnum = M.get_lnum()
+  local sign_hl = M.get_sign_hl(lnum)
+  local current_line = vim.api.nvim_win_get_cursor(0)[1]
+  local lnum_hl = sign_hl or lnum == current_line and "AtomicStatusColCurrentLineNr" or "AtomicStatusColLineNr"
+  local lnum_hl = "%#" .. lnum_hl .. "#"
+  local pad = (" "):rep(width - #tostring(lnum))
 
-  local pad = (" "):rep(width - #lnum)
-
-  return pad .. lnum
+  return pad .. lnum_hl .. lnum
+  -- return ("%s%s%s%s"):format(pad, (), lnum)
 end
 
 function M.setup(opts)
@@ -49,6 +87,13 @@ function M.setup(opts)
   vim.api.nvim_set_hl(0, "AtomicStatusColSign", { link = lnum_target })
   vim.api.nvim_set_hl(0, "AtomicStatusColLineNr", { link = lnum_target })
   vim.api.nvim_set_hl(0, "AtomicStatusColSep", { link = sep_target })
+
+  if opts.current_line then
+    local current_target = opts.hl.current or "Normal"
+    vim.api.nvim_set_hl(0, "AtomicStatusColCurrentLineNr", { link = current_target })
+  else
+    vim.api.nvim_set_hl(0, "AtomicStatusColCurrentLineNr", { link = lnum_target })
+  end
 
   local group = vim.api.nvim_create_augroup("StatusCol", { clear = true })
 
@@ -64,7 +109,7 @@ function M.setup(opts)
   M.update_width()
 
   local stc = "%#AtomicStatusColSign#%s"
-    .. "%#AtomicStatusColLineNr#%{%v:lua.require('atomcolumn.statuscol').render()%}"
+    .. "%{%v:lua.require('atomcolumn.statuscol').render()%}"
     .. "%#AtomicStatusColSep#"
     .. (opts.sep or "")
 

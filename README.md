@@ -11,10 +11,12 @@ Minimalistic statuscolumn for Neovim.
     sign = nil,
     ft_ignore = nil,
     bt_ignore = nil,
+    current_line = false,
     hl = {
       sign = nil,
       lnum = nil,
       sep = nil,
+      current = nil,
     },
   },
 }
@@ -41,6 +43,10 @@ Minimalistic statuscolumn for Neovim.
   List of buffer types where the status column will be disabled.
   Common values: `{ "nofile", "prompt", "terminal" }`
 
+- **current_line** `bool`
+  Highlight the current line number.
+  Default: `false`
+
 - **hl** `table`
   Highlight configuration for different parts of the status column.
 
@@ -55,3 +61,10 @@ Minimalistic statuscolumn for Neovim.
   - **hl.sep** `string`
     Highlight group for the separator character.
     Default: `LineNr`
+
+  - **hl.current** `string`
+    Highlight group for the current line number.
+    Default: `Normal`
+
+## Bugs
+- The diagnostic highlight does not work correctly with `set relativenumber`.
